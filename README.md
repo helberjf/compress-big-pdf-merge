@@ -1,188 +1,168 @@
-# Juntar e Comprimir PDFs com Python
+# PDF Tools
 
-Este projeto usa **Python** com a biblioteca **PyMuPDF** para:
+Ferramenta de linha de comando em Python para juntar vários PDFs e comprimir o resultado com Ghostscript.
 
-1. Ler arquivos PDF.
-2. Juntar vários PDFs em um único arquivo.
-3. Salvar o PDF final com compressão/otimização básica.
+O projeto usa:
 
----
+- Python 3.10+
+- PyMuPDF para juntar os PDFs
+- Ghostscript para comprimir o PDF final
 
-## 1. Requisitos
-
-Antes de começar, você precisa ter instalado:
-
-- Python 3.10 ou superior
-- pip, que normalmente já vem com o Python
-
-Para verificar se o Python está instalado, rode no terminal:
-
-```bash
-python --version
-```
-
-ou:
-
-```bash
-python3 --version
-```
-
-Se aparecer algo como:
-
-```bash
-Python 3.11.0
-```
-
-está tudo certo.
-
----
-
-## 2. Criar a pasta do projeto
-
-Crie uma pasta para o projeto:
-
-```bash
-mkdir pdf-tools
-cd pdf-tools
-```
-
-Agora crie duas pastas dentro dela:
-
-```bash
-mkdir arquivos
-mkdir saida
-```
-
-A estrutura ficará assim:
+## Estrutura
 
 ```txt
 pdf-tools/
 ├── arquivos/
 ├── saida/
-└── main.py
+├── main.py
+├── requirements.txt
+└── README.md
 ```
 
-A pasta `arquivos` será usada para colocar os PDFs originais.
+A pasta `arquivos/` é onde você coloca os PDFs de entrada.
+A pasta `saida/` é onde o PDF juntado temporário e o PDF final serão criados.
 
-A pasta `saida` será usada para salvar o PDF final.
+## Instalar Python
 
----
+Baixe e instale o Python em:
 
-## 3. Criar ambiente virtual
+```txt
+https://www.python.org/downloads/
+```
 
-No Windows, rode:
+Durante a instalação no Windows, marque a opção para adicionar o Python ao `PATH`.
+
+Confira a instalação:
+
+```bash
+python --version
+```
+
+No Linux ou Mac, talvez o comando seja:
+
+```bash
+python3 --version
+```
+
+## Criar Ambiente Virtual
+
+No Windows:
 
 ```bash
 python -m venv venv
-```
-
-Depois ative o ambiente virtual:
-
-```bash
 venv\Scripts\activate
 ```
 
-No Linux ou Mac, rode:
+No Linux ou Mac:
 
 ```bash
 python3 -m venv venv
-```
-
-Depois ative:
-
-```bash
 source venv/bin/activate
 ```
 
-Quando o ambiente estiver ativo, o terminal deve mostrar algo parecido com:
+## Instalar Dependências Python
+
+Com o ambiente virtual ativo:
 
 ```bash
-(venv) C:\seu-projeto\pdf-tools>
+pip install -r requirements.txt
 ```
 
----
-
-## 4. Instalar a biblioteca
-
-Com o ambiente virtual ativo, instale o PyMuPDF:
-
-```bash
-pip install pymupdf
-```
-
-Para conferir se instalou corretamente:
-
-```bash
-pip show pymupdf
-```
-
----
-
-## 5. Criar o arquivo `main.py`
-
-Crie um arquivo chamado:
+O arquivo `requirements.txt` instala apenas:
 
 ```txt
-main.py
+pymupdf
 ```
 
-Dentro dele, coloque o código abaixo:
+## Instalar Ghostscript
 
-```python
-import pymupdf
-from pathlib import Path
+### Windows com winget
 
-
-def merge_and_compress_pdfs(input_folder: str, output_pdf: str):
-    input_path = Path(input_folder)
-    output_path = Path(output_pdf)
-
-    if not input_path.exists():
-        raise FileNotFoundError(f"A pasta não foi encontrada: {input_path}")
-
-    pdf_files = sorted(input_path.glob("*.pdf"))
-
-    if not pdf_files:
-        raise FileNotFoundError(f"Nenhum PDF encontrado na pasta: {input_path}")
-
-    merged_doc = pymupdf.open()
-
-    print("PDFs encontrados:")
-
-    for pdf_file in pdf_files:
-        print(f"- {pdf_file.name}")
-
-        pdf = pymupdf.open(pdf_file)
-        merged_doc.insert_pdf(pdf)
-        pdf.close()
-
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    merged_doc.save(
-        output_path,
-        garbage=4,
-        deflate=True,
-        clean=True
-    )
-
-    merged_doc.close()
-
-    print()
-    print(f"PDF final criado com sucesso: {output_path}")
-
-
-if __name__ == "__main__":
-    merge_and_compress_pdfs(
-        input_folder="arquivos",
-        output_pdf="saida/pdf_final_comprimido.pdf"
-    )
+```bash
+winget install ArtifexSoftware.Ghostscript
 ```
 
----
+Depois feche e abra o terminal novamente.
 
-## 6. Colocar os PDFs na pasta correta
+Se o `winget` não existir, abra o PowerShell como administrador e tente com Chocolatey:
 
-Coloque os arquivos PDF que você quer juntar dentro da pasta:
+```bash
+choco install ghostscript -y
+```
+
+Se a instalação terminar, mas `gswin64c --version` ainda não funcionar, instale ou reinstale o pacote do aplicativo:
+
+```bash
+choco install ghostscript.app -y --force
+```
+
+Depois feche e abra o terminal novamente.
+
+### Linux
+
+Ubuntu/Debian:
+
+```bash
+sudo apt update
+sudo apt install ghostscript
+```
+
+Fedora:
+
+```bash
+sudo dnf install ghostscript
+```
+
+### Mac
+
+Com Homebrew:
+
+```bash
+brew install ghostscript
+```
+
+## Testar se o Ghostscript Está Instalado
+
+No Windows, teste:
+
+```bash
+gswin64c --version
+```
+
+Se não funcionar, tente:
+
+```bash
+gswin32c --version
+```
+
+No Linux ou Mac:
+
+```bash
+gs --version
+```
+
+Se nenhum desses comandos funcionar, o Ghostscript não está instalado ou não está no `PATH`.
+
+Se o Ghostscript estiver instalado, mas o comando não for encontrado, você também pode apontar o caminho completo do executável.
+
+Primeiro tente localizar o executável:
+
+```powershell
+Get-ChildItem "C:\Program Files" -Recurse -Filter gswin64c.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+```
+
+No PowerShell:
+
+```powershell
+$env:GHOSTSCRIPT_PATH="C:\Program Files\gs\gs10.07.1\bin\gswin64c.exe"
+python main.py --input arquivos --output saida/pdf_final.pdf --quality ebook --force
+```
+
+Ajuste o caminho conforme a versão instalada na sua máquina.
+
+## Como Usar
+
+Coloque os PDFs dentro da pasta:
 
 ```txt
 arquivos/
@@ -191,112 +171,84 @@ arquivos/
 Exemplo:
 
 ```txt
-pdf-tools/
-├── arquivos/
-│   ├── documento1.pdf
-│   ├── documento2.pdf
-│   └── documento3.pdf
-├── saida/
-└── main.py
+arquivos/
+├── 01-documento.pdf
+├── 02-anexo.pdf
+└── 03-comprovante.pdf
 ```
 
-A ordem dos PDFs será alfabética.
+Os arquivos são juntados em ordem alfabética. Para controlar a ordem, coloque números no início dos nomes.
 
-Exemplo:
+Rode:
+
+```bash
+python main.py --input arquivos --output saida/pdf_final.pdf --quality ebook
+```
+
+Para comprimir mais:
+
+```bash
+python main.py --input arquivos --output saida/pdf_final.pdf --quality screen
+```
+
+Se o arquivo final já existir, o programa não sobrescreve por padrão. Para permitir sobrescrita:
+
+```bash
+python main.py --input arquivos --output saida/pdf_final.pdf --quality ebook --force
+```
+
+## Qualidade de Compressão
+
+O Ghostscript aceita estes modos:
+
+- `screen`: menor tamanho, maior perda de qualidade. Útil para visualização em tela.
+- `ebook`: bom equilíbrio entre tamanho e qualidade. É o padrão do projeto.
+- `printer`: qualidade maior, arquivo geralmente maior.
+- `prepress`: qualidade alta para impressão profissional, arquivo geralmente bem maior.
+
+Use `screen` quando precisar reduzir muito o tamanho, mas confira o PDF final porque textos escaneados e imagens podem perder nitidez.
+
+## Exemplo de Saída
 
 ```txt
-01-capa.pdf
-02-contrato.pdf
-03-anexos.pdf
+Iniciando processamento...
+
+Pasta de entrada: arquivos
+Arquivo de saída: saida/pdf_final.pdf
+Qualidade escolhida: /ebook
+
+PDFs encontrados: 3
+- 01-documento.pdf
+- 02-anexo.pdf
+- 03-comprovante.pdf
+
+Juntando PDFs...
+PDF juntado criado: saida/pdf_juntado.pdf
+Tamanho antes da compressão: 18.4 MB
+
+Comprimindo com Ghostscript...
+PDF comprimido criado: saida/pdf_final.pdf
+Tamanho depois da compressão: 5.2 MB
+Redução aproximada: 71.7%
+
+Processo concluído com sucesso.
 ```
 
-Se quiser controlar a ordem, renomeie os arquivos com números no início.
+## Se o Arquivo Continuar Grande
 
----
+PDFs escaneados, documentos com fotos grandes e imagens em alta resolução podem continuar pesados mesmo após compressão.
 
-## 7. Rodar o projeto
+Tente nesta ordem:
 
-Com o ambiente virtual ativo, rode:
+1. Rode com `--quality screen`.
+2. Verifique se o PDF tem imagens escaneadas em resolução muito alta.
+3. Reduza as imagens antes de criar o PDF original, quando possível.
+4. Confira se o arquivo final ainda está legível antes de enviar ou arquivar.
+
+## Rodar Testes
+
+Os testes usam apenas `unittest`, que já vem com o Python:
 
 ```bash
-python main.py
-```
-
-ou, se estiver usando Linux/Mac:
-
-```bash
-python3 main.py
-```
-
-Se tudo estiver certo, aparecerá algo parecido com:
-
-```bash
-PDFs encontrados:
-- 01-capa.pdf
-- 02-contrato.pdf
-- 03-anexos.pdf
-
-PDF final criado com sucesso: saida/pdf_final_comprimido.pdf
-```
-
----
-
-## 8. Resultado final
-
-O arquivo final será salvo em:
-
-```txt
-saida/pdf_final_comprimido.pdf
-```
-
-Esse arquivo já estará:
-
-- Com todos os PDFs unidos.
-- Com limpeza de objetos internos.
-- Com compressão básica aplicada.
-
----
-
-## 9. Observação importante sobre compressão
-
-Essa compressão funciona bem para limpar e otimizar PDFs.
-
-Porém, se o PDF tiver muitas imagens escaneadas, fotos ou documentos muito pesados, talvez a redução não seja grande.
-
-Nesse caso, a compressão mais forte geralmente é feita com **Ghostscript**, mas para começar o PyMuPDF já resolve bem a maioria dos casos.
-
----
-
-## 10. Comandos principais resumidos
-
-```bash
-mkdir pdf-tools
-cd pdf-tools
-
-mkdir arquivos
-mkdir saida
-
-python -m venv venv
-venv\Scripts\activate
-
-pip install pymupdf
-
-python main.py
-```
-
-No Linux/Mac:
-
-```bash
-mkdir pdf-tools
-cd pdf-tools
-
-mkdir arquivos
-mkdir saida
-
-python3 -m venv venv
-source venv/bin/activate
-
-pip install pymupdf
-
-python3 main.py
+python -m unittest -v
 ```

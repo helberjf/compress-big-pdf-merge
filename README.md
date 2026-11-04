@@ -1,254 +1,65 @@
-# PDF Tools
+# PDF Merge and Compression CLI
 
-Ferramenta de linha de comando em Python para juntar vários PDFs e comprimir o resultado com Ghostscript.
+A Python command-line utility that merges PDFs in filename order with PyMuPDF, then compresses the merged document with Ghostscript. It reports input files, output sizes and the resulting size change.
 
-O projeto usa:
+## Setup
 
-- Python 3.10+
-- PyMuPDF para juntar os PDFs
-- Ghostscript para comprimir o PDF final
-
-## Estrutura
-
-```txt
-pdf-tools/
-├── arquivos/
-├── saida/
-├── main.py
-├── requirements.txt
-└── README.md
-```
-
-A pasta `arquivos/` é onde você coloca os PDFs de entrada.
-A pasta `saida/` é onde o PDF juntado temporário e o PDF final serão criados.
-
-## Instalar Python
-
-Baixe e instale o Python em:
-
-```txt
-https://www.python.org/downloads/
-```
-
-Durante a instalação no Windows, marque a opção para adicionar o Python ao `PATH`.
-
-Confira a instalação:
+Use **Python 3.10+** and install Ghostscript separately from the Python requirements.
 
 ```bash
-python --version
+git clone https://github.com/helberjf/compress-big-pdf-merge.git
+cd compress-big-pdf-merge
+python -m venv .venv
 ```
 
-No Linux ou Mac, talvez o comando seja:
+Activate the environment with `.venv\Scripts\Activate.ps1` in PowerShell or `source .venv/bin/activate` on macOS/Linux, then install the Python dependency:
 
 ```bash
-python3 --version
+python -m pip install -r requirements.txt
 ```
 
-## Criar Ambiente Virtual
+Install [Ghostscript](https://ghostscript.com/releases/gsdnld.html) using its installer or your operating system's package manager. Confirm `gswin64c --version` on Windows or `gs --version` on macOS/Linux. If it is not on `PATH`, set `GHOSTSCRIPT_PATH` to the full executable path. The code also checks standard Windows Ghostscript installation directories.
 
-No Windows:
+## Example workflow
 
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
+Place fictional sample PDFs in `arquivos` with numeric prefixes to control the order:
 
-No Linux ou Mac:
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-## Instalar Dependências Python
-
-Com o ambiente virtual ativo:
-
-```bash
-pip install -r requirements.txt
-```
-
-O arquivo `requirements.txt` instala apenas:
-
-```txt
-pymupdf
-```
-
-## Instalar Ghostscript
-
-### Windows com winget
-
-```bash
-winget install ArtifexSoftware.Ghostscript
-```
-
-Depois feche e abra o terminal novamente.
-
-Se o `winget` não existir, abra o PowerShell como administrador e tente com Chocolatey:
-
-```bash
-choco install ghostscript -y
-```
-
-Se a instalação terminar, mas `gswin64c --version` ainda não funcionar, instale ou reinstale o pacote do aplicativo:
-
-```bash
-choco install ghostscript.app -y --force
-```
-
-Depois feche e abra o terminal novamente.
-
-### Linux
-
-Ubuntu/Debian:
-
-```bash
-sudo apt update
-sudo apt install ghostscript
-```
-
-Fedora:
-
-```bash
-sudo dnf install ghostscript
-```
-
-### Mac
-
-Com Homebrew:
-
-```bash
-brew install ghostscript
-```
-
-## Testar se o Ghostscript Está Instalado
-
-No Windows, teste:
-
-```bash
-gswin64c --version
-```
-
-Se não funcionar, tente:
-
-```bash
-gswin32c --version
-```
-
-No Linux ou Mac:
-
-```bash
-gs --version
-```
-
-Se nenhum desses comandos funcionar, o Ghostscript não está instalado ou não está no `PATH`.
-
-Se o Ghostscript estiver instalado, mas o comando não for encontrado, você também pode apontar o caminho completo do executável.
-
-Primeiro tente localizar o executável:
-
-```powershell
-Get-ChildItem "C:\Program Files" -Recurse -Filter gswin64c.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-```
-
-No PowerShell:
-
-```powershell
-$env:GHOSTSCRIPT_PATH="C:\Program Files\gs\gs10.07.1\bin\gswin64c.exe"
-python main.py --input arquivos --output saida/pdf_final.pdf --quality ebook --force
-```
-
-Ajuste o caminho conforme a versão instalada na sua máquina.
-
-## Como Usar
-
-Coloque os PDFs dentro da pasta:
-
-```txt
+```text
 arquivos/
+  01-cover.pdf
+  02-document.pdf
+  03-appendix.pdf
 ```
-
-Exemplo:
-
-```txt
-arquivos/
-├── 01-documento.pdf
-├── 02-anexo.pdf
-└── 03-comprovante.pdf
-```
-
-Os arquivos são juntados em ordem alfabética. Para controlar a ordem, coloque números no início dos nomes.
-
-Rode:
 
 ```bash
 python main.py --input arquivos --output saida/pdf_final.pdf --quality ebook
 ```
 
-Para comprimir mais:
+The tool writes the merged intermediate file `saida/pdf_juntado.pdf` and the compressed final file. Inspect the resulting page order and readability before using it. Keep the output directory separate from the input directory so a later run does not pick up previous outputs as inputs.
 
-```bash
-python main.py --input arquivos --output saida/pdf_final.pdf --quality screen
-```
+| Option | Behavior |
+| --- | --- |
+| `--input` | Directory of PDFs; defaults to `arquivos` |
+| `--output` | Final file; defaults to `saida/pdf_final.pdf` |
+| `--quality` | `screen`, `ebook` (default), `printer` or `prepress` |
+| `--force` | Permits replacement of an existing final output |
 
-Se o arquivo final já existir, o programa não sobrescreve por padrão. Para permitir sobrescrita:
+The final file is protected from replacement by default. The fixed intermediate file is recreated on each run; `--force` is not a general protection mechanism for every generated file.
 
-```bash
-python main.py --input arquivos --output saida/pdf_final.pdf --quality ebook --force
-```
+## Code and checks
 
-## Qualidade de Compressão
-
-O Ghostscript aceita estes modos:
-
-- `screen`: menor tamanho, maior perda de qualidade. Útil para visualização em tela.
-- `ebook`: bom equilíbrio entre tamanho e qualidade. É o padrão do projeto.
-- `printer`: qualidade maior, arquivo geralmente maior.
-- `prepress`: qualidade alta para impressão profissional, arquivo geralmente bem maior.
-
-Use `screen` quando precisar reduzir muito o tamanho, mas confira o PDF final porque textos escaneados e imagens podem perder nitidez.
-
-## Exemplo de Saída
-
-```txt
-Iniciando processamento...
-
-Pasta de entrada: arquivos
-Arquivo de saída: saida/pdf_final.pdf
-Qualidade escolhida: /ebook
-
-PDFs encontrados: 3
-- 01-documento.pdf
-- 02-anexo.pdf
-- 03-comprovante.pdf
-
-Juntando PDFs...
-PDF juntado criado: saida/pdf_juntado.pdf
-Tamanho antes da compressão: 18.4 MB
-
-Comprimindo com Ghostscript...
-PDF comprimido criado: saida/pdf_final.pdf
-Tamanho depois da compressão: 5.2 MB
-Redução aproximada: 71.7%
-
-Processo concluído com sucesso.
-```
-
-## Se o Arquivo Continuar Grande
-
-PDFs escaneados, documentos com fotos grandes e imagens em alta resolução podem continuar pesados mesmo após compressão.
-
-Tente nesta ordem:
-
-1. Rode com `--quality screen`.
-2. Verifique se o PDF tem imagens escaneadas em resolução muito alta.
-3. Reduza as imagens antes de criar o PDF original, quando possível.
-4. Confira se o arquivo final ainda está legível antes de enviar ou arquivar.
-
-## Rodar Testes
-
-Os testes usam apenas `unittest`, que já vem com o Python:
+[main.py](main.py) separates discovery, merge, executable lookup, Ghostscript invocation and output validation. [test_main.py](test_main.py) uses Python's `unittest` framework; [runPythonEasy.md](runPythonEasy.md) retains additional usage notes in Portuguese.
 
 ```bash
 python -m unittest -v
+python main.py --help
 ```
+
+Install the requirements before running tests because the application imports PyMuPDF. Automated cases do not establish a universal compression ratio or visual fidelity for arbitrary PDFs.
+
+## Design tradeoffs
+
+- **Two specialized tools:** PyMuPDF handles assembly and Ghostscript handles compression, but Ghostscript is a native executable outside the Python environment.
+- **Preset compression:** a small set of quality levels keeps the CLI simple; results depend on document contents and can reduce image clarity without guaranteeing a smaller file.
+- **Filename ordering:** predictable numeric prefixes avoid a separate manifest, but users must prepare the naming order explicitly.
+- **Retained intermediate PDF:** makes the merged result available for inspection and comparison, while using extra disk space and a fixed intermediate filename.
